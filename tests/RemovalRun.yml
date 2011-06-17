@@ -1,0 +1,4 @@
+SiteTree:
+	additionrun:
+		URLSegment: additionrun
+		Title: updaterun

@@ -15,7 +15,7 @@ SilverStripe 2.4.x
 
 ## Features
 
-- Allows easy injection of the testdata via Yaml files
+- Allows easy injection of the test data via Yaml files
 - Data is added *on top* of the current database 
 - The test data can be updated, removed and added
 - Test data can be broken down into chunks, separate Yaml files are allowed and can be added on the fly
@@ -30,12 +30,49 @@ You can also access the module via your browser. Log in as admin and make sure y
 
 	<your_webroot>/dev/data
 
-### Preparing your files
+### Basic workflow
 
-Testdata Yaml files should be added <wwwroot>/testdata/data directory. The names are case insensitive and they need to have *.yml* extension. The format of these files is the same as for SapphireTest, so you can freely copy them between one and the other.
+TestData Yaml files should be added <wwwroot>/testdata/data directory. The names are case insensitive and they need to have *.yml* extension. The format of these files is the same as for SapphireTest, so you can freely copy them between one and the other.
+
+Let's start with something simple. In the data directory, create a file named *media.yml*:
+
+	Page:
+		page:
+			Title: Media Releases
+		release1:
+			Title: Double rainbow seen over Wellington
+			Parent: =>Page.page
+
+To add this data, run:
+
+	dev/data/load/media
+
+Then if you'd like to add some modifications, you can edit the file:
+
+	Page:
+		page:
+			Title: Media Releases
+		release1:
+			Title: Triple rainbow seen over Wellington
+			Content: Really! Saw it with me own eyes!
+			Parent: =>Page.page
+		release2:
+			Title: The claim about double rainbow is a hoax
+			Parent: =>Page.page
+
+To update the data, run the command again:
+
+	dev/data/load/media
+
+When you are done, you can remove all data by using:
+
+	dev/data/reset
+
+And that's basically it.
 
 ## Dev notes
 
 1. Do not use this functionality on live.
-1. The records are tracked on the basis of the Yaml filename and the Yaml handle, so you need to be aware that if you change any of these, testdata will think that you have added new records.
-1. Because of the above, you can update test records as long as you retain the filename and the Yaml handle.
+1. The records are tracked on the basis of the Yaml filename and the Yaml handle, so you need to be aware that if you change any of these, TestData will think that you have added new records.
+1. Because of the above, you can update test records as long as you retain the filename and the Yaml handle. Their IDs will be retained, so your relations will stay intact.
+1. TestData will automatically publish versioned objects to Live, and remove them from both stages, so you don't have to do it manually.
