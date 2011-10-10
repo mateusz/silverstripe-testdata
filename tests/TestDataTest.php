@@ -1,6 +1,4 @@
 <?php
-
-
 class TestDataTest extends FunctionalTest {
 	static $fixture_file = 'testdata/tests/baseline.yml';
 
@@ -26,7 +24,7 @@ class TestDataTest extends FunctionalTest {
 
 		// Check that it removes added records
 		$base = BASE_PATH;
-		`cp $base/testdata/tests/FirstRun.yml $base/testdata/tests/exec.yml`;
+		copy("$base/testdata/tests/FirstRun.yml", "$base/testdata/tests/exec.yml");
 		$this->get("dev/data/load/exec");
 		$all = DataObject::get('SiteTree');
 
@@ -38,11 +36,11 @@ class TestDataTest extends FunctionalTest {
 
 	function testRun() {
 		$base = BASE_PATH;
-		`cp $base/testdata/tests/FirstRun.yml $base/testdata/tests/exec.yml`;
+		copy("$base/testdata/tests/FirstRun.yml", "$base/testdata/tests/exec.yml");
 		$this->get("dev/data/load/exec");
 
 		// Check that addition occurs
-		`cp $base/testdata/tests/AdditionRun.yml $base/testdata/tests/exec.yml`;
+		copy("$base/testdata/tests/AdditionRun.yml", "$base/testdata/tests/exec.yml");
 		$this->get("dev/data/load/exec");
 
 		$all = DataObject::get('SiteTree');
@@ -54,7 +52,7 @@ class TestDataTest extends FunctionalTest {
 		), $all);
 		
 		// Check that records can be updated
-		`cp $base/testdata/tests/UpdateRun.yml $base/testdata/tests/exec.yml`;
+		copy("$base/testdata/tests/UpdateRun.yml", "$base/testdata/tests/exec.yml");
 		$this->get("dev/data/load/exec");
 
 		$all = DataObject::get('SiteTree');
@@ -66,7 +64,7 @@ class TestDataTest extends FunctionalTest {
 		), $all);
 
 		// Check records can be removed
-		`cp $base/testdata/tests/RemovalRun.yml $base/testdata/tests/exec.yml`;
+		copy("$base/testdata/tests/RemovalRun.yml", "$base/testdata/tests/exec.yml");
 		$this->get("dev/data/load/exec");
 
 		$all = DataObject::get('SiteTree');
