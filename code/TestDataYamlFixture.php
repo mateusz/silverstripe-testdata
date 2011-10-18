@@ -82,7 +82,7 @@ class TestDataYamlFixture extends YamlFixture {
 
 			// Make sure the object is deployed to both stages.
 			if (Object::has_extension($obj->ClassName, 'Versioned')) {
-				$obj->publish('Stage','Live');
+				$obj->doPublish();
 			}
 
 			// Increment the version on the tag so we can find the old unused records afterwards.
