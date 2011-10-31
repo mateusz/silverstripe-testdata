@@ -40,9 +40,9 @@ class TestDataYamlFixture extends YamlFixture {
 			// This is just in case field setters triggered by the population code in the next block
 			// Call $this->write().  (For example, in FileTest)
 			// Do this only if the object is new.
-			if(!$tag && isset($fields['ID'])) {
+			if(!$tag && isset($fields['ID']) && is_array($fields)) {
 				$obj->ID = $fields['ID'];
-				
+
 				// The database needs to allow inserting values into the foreign key column (ID in our case)
 				$conn = DB::getConn();
 				if(method_exists($conn, 'allowPrimaryKeyEditing')) $conn->allowPrimaryKeyEditing(ClassInfo::baseDataClass($dataClass), true);
@@ -51,6 +51,10 @@ class TestDataYamlFixture extends YamlFixture {
 			}
 			
 			// Populate the dictionary with the ID
+			if(!is_array($fields)) {
+				throw new Exception($dataClass . ' failed to load. Please check YML file for errors');
+			}
+
 			if($fields) foreach($fields as $fieldName => $fieldVal) {
 				if($obj->many_many($fieldName) || $obj->has_many($fieldName) || $obj->has_one($fieldName)) continue;
 				$obj->$fieldName = $this->parseFixtureVal($fieldVal);
