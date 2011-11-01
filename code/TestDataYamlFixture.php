@@ -94,6 +94,7 @@ class TestDataYamlFixture extends YamlFixture {
 	protected function writeRelations($dataClass, $items) {
 		foreach($items as $identifier => $fields) {
 			$obj = $this->objFromFixture($dataClass, $identifier);
+			if (!$obj) continue;
 			
 			// Populate all relations
 			if($fields) foreach($fields as $fieldName => $fieldVal) {
