@@ -1,9 +1,11 @@
 <?php
 
 class TestDataController extends Controller {
+	static $data_dir;
 	static $quiet = false;
 
 	function getDataDir() {
+		if (isset(self::$data_dir)) return self::$data_dir;
 		return project().'/testdata/';
 	}
 

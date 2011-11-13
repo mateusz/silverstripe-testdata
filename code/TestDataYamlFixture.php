@@ -2,19 +2,15 @@
 
 
 class TestDataYamlFixture extends YamlFixture {
-	public function saveIntoDatabase() {
-		// This has to be executed only once per fixture.
-		$testDataTag = basename($this->fixtureFile);
-		$this->latestVersion = DB::query("SELECT MAX(\"Version\") FROM \"TestDataTag\" WHERE \"FixtureFile\"='$testDataTag'")->value();
-
-		parent::saveIntoDatabase();
-	}
-
 	/**
 	 * Mostly rewritten from parent, but allows circular dependencies - goes throught the relation loop after
 	 * the dictionary is fully populated.
 	 */
 	public function saveIntoDatabase() {
+		// Custom plumbing: this has to be executed only once per fixture.
+		$testDataTag = basename($this->fixtureFile);
+		$this->latestVersion = DB::query("SELECT MAX(\"Version\") FROM \"TestDataTag\" WHERE \"FixtureFile\"='$testDataTag'")->value();
+
 		// We have to disable validation while we import the fixtures, as the order in
 		// which they are imported doesnt guarantee valid relations until after the
 		// import is complete.
@@ -39,7 +35,6 @@ class TestDataYamlFixture extends YamlFixture {
 				$this->writeRelations($dataClass, $items);
 			}
 		}
-
 		
 		DataObject::set_validation_enabled($validationenabled);
 	}
