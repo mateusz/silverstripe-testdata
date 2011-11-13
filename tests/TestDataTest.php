@@ -1,6 +1,6 @@
 <?php
 class TestDataTest extends FunctionalTest {
-	static $fixture_file = 'testdata/tests/baseline.yml';
+	static $fixture_file = 'testdata/tests/Baseline.yml';
 
 	public $envType;
 
