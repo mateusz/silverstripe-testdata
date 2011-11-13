@@ -11,6 +11,40 @@ class TestDataYamlFixture extends YamlFixture {
 	}
 
 	/**
+	 * Mostly rewritten from parent, but allows circular dependencies - goes throught the relation loop after
+	 * the dictionary is fully populated.
+	 */
+	public function saveIntoDatabase() {
+		// We have to disable validation while we import the fixtures, as the order in
+		// which they are imported doesnt guarantee valid relations until after the
+		// import is complete.
+		$validationenabled = DataObject::get_validation_enabled();
+		DataObject::set_validation_enabled(false);
+		
+		$parser = new Spyc();
+		$fixtureContent = $parser->loadFile(Director::baseFolder().'/'.$this->fixtureFile);
+
+		$this->fixtureDictionary = array();
+		foreach($fixtureContent as $dataClass => $items) {
+			if(ClassInfo::exists($dataClass)) {
+				$this->writeDataObject($dataClass, $items);
+			} else {
+				$this->writeSQL($dataClass, $items);
+			}
+		}
+
+		// Dictionary is now fully built, inject the relations.
+		foreach($fixtureContent as $dataClass => $items) {
+			if(ClassInfo::exists($dataClass)) {
+				$this->writeRelations($dataClass, $items);
+			}
+		}
+
+		
+		DataObject::set_validation_enabled($validationenabled);
+	}
+
+	/**
 	 * Mostly rewritten from parent, with changes that allow us to update objects (not only write new).
 	 */
 	protected function writeDataObject($dataClass, $items) {
@@ -89,7 +123,7 @@ class TestDataYamlFixture extends YamlFixture {
 	}
 
 	/**
-	 * Add automated publishing
+	 * Populate relations for items of the dataClass (code moved from writeDataObject).
 	 */
 	protected function writeRelations($dataClass, $items) {
 		foreach($items as $identifier => $fields) {
