@@ -5,8 +5,8 @@ class TestDataTest extends FunctionalTest {
 	public $envType;
 
 	protected $extraDataObjects = array(
-		'YamlFixtureTest_CircularOne',
-		'YamlFixtureTest_CircularTwo'
+		'TestDataTest_CircularOne',
+		'TestDataTest_CircularTwo'
 	);
 
 	function setUp() {
@@ -81,8 +81,12 @@ class TestDataTest extends FunctionalTest {
 	}
 
 	function testCircularReferences() {
-		$circularOne = DataObject::get_by_id("TestDataTest_CircularOne", $this->idFromFixture("TestDataTest_CircularOne", "one"));
-		$circularTwo = DataObject::get_by_id("TestDataTest_CircularTwo", $this->idFromFixture("TestDataTest_CircularTwo", "two"));
+		$base = BASE_PATH;
+		copy("$base/testdata/tests/Circular.yml", "$base/testdata/tests/exec.yml");
+		$this->get("dev/data/load/exec");
+
+		$circularOne = DataObject::get_one("TestDataTest_CircularOne");
+		$circularTwo = DataObject::get_one("TestDataTest_CircularTwo");
 
 		$this->assertEquals($circularOne->HasOneID, $circularTwo->ID, "Circular references in has_one work");
 		$this->assertEquals($circularOne->ID, $circularTwo->HasOneID, "Circular references in has_one work");

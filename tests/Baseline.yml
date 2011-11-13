@@ -1,17 +1,3 @@
 SiteTree:
 	baseline:
 		URLSegment: baseline
-
-YamlFixtureTest_CircularOne:
-  one:
-    Name: CircularOne
-    HasOne: =>YamlFixtureTest_CircularTwo.two
-    HasMany: =>YamlFixtureTest_CircularTwo.two
-    ManyMany: =>YamlFixtureTest_CircularTwo.two
-
-YamlFixtureTest_CircularTwo:
-  two:
-    Name: CircularTwo
-    HasOne: =>YamlFixtureTest_CircularOne.one
-    HasMany: =>YamlFixtureTest_CircularOne.one
-    ManyMany: =>YamlFixtureTest_CircularOne.one

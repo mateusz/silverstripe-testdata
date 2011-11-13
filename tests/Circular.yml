@@ -1,0 +1,13 @@
+TestDataTest_CircularOne:
+  one:
+    Name: CircularOne
+    HasOne: =>TestDataTest_CircularTwo.two
+    HasMany: =>TestDataTest_CircularTwo.two
+    ManyMany: =>TestDataTest_CircularTwo.two
+
+TestDataTest_CircularTwo:
+  two:
+    Name: CircularTwo
+    HasOne: =>TestDataTest_CircularOne.one
+    HasMany: =>TestDataTest_CircularOne.one
+    ManyMany: =>TestDataTest_CircularOne.one
