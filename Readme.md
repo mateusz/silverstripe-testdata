@@ -19,6 +19,7 @@ SilverStripe 2.4.x
 - Data is added *on top* of the current database 
 - The test data can be updated, removed and added
 - Test data can be broken down into chunks, separate Yaml files are allowed and can be added on the fly
+- Original YamlFixture is overriden to allow for circular references
 
 ## Usage
 
@@ -32,7 +33,7 @@ You can also access the module via your browser. Log in as admin and make sure y
 
 ### Basic workflow
 
-TestData Yaml files should be added <wwwroot>/testdata/data directory. The names are case insensitive and they need to have *.yml* extension. The format of these files is the same as for SapphireTest, so you can freely copy them between one and the other.
+TestData Yaml files should be added <wwwroot>/mysite/testdata directory. The names are case insensitive and they need to have *.yml* extension. The format of these files is the same as for SapphireTest, so you can freely copy them between one and the other.
 
 Let's start with something simple. In the data directory, create a file named *media.yml*:
 
@@ -76,3 +77,4 @@ And that's basically it.
 1. The records are tracked on the basis of the Yaml filename and the Yaml handle, so you need to be aware that if you change any of these, TestData will think that you have added new records.
 1. Because of the above, you can update test records as long as you retain the filename and the Yaml handle. Their IDs will be retained, so your relations will stay intact.
 1. TestData will automatically publish versioned objects to Live, and remove them from both stages, so you don't have to do it manually.
+1. From the project perspective, we find it useful to keep a dummy.yml with data used for dev and testing, so everyone is at least using the same baseline. Apart from that, ia.yml is useful for keeping a clean IA for initial loading to the production server and for the client.
