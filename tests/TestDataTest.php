@@ -18,6 +18,9 @@ class TestDataTest extends FunctionalTest {
 	}
 
 	function tearDown() {
+		$base = BASE_PATH;
+		unlink("$base/testdata/tests/exec.yml");
+
 		Director::set_environment_type($this->envType);
 	}
 
