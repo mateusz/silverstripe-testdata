@@ -64,26 +64,6 @@ class TestDataYamlFixture extends YamlFixture {
 			// has to happen before relations in case a class is referring to itself
 			$this->fixtureDictionary[$dataClass][$identifier] = $obj->ID;
 			
-			// Populate all relations
-			if($fields) foreach($fields as $fieldName => $fieldVal) {
-				if($obj->many_many($fieldName) || $obj->has_many($fieldName)) {
-					$parsedItems = array();
-					$items = preg_split('/ *, */',trim($fieldVal));
-					foreach($items as $item) {
-						$parsedItems[] = $this->parseFixtureVal($item);
-					}
-					$obj->write();
-					if($obj->has_many($fieldName)) {
-						$obj->getComponents($fieldName)->setByIDList($parsedItems);
-					} elseif($obj->many_many($fieldName)) {
-						$obj->getManyManyComponents($fieldName)->setByIDList($parsedItems);
-					}
-				} elseif($obj->has_one($fieldName)) {
-					$obj->{$fieldName . 'ID'} = $this->parseFixtureVal($fieldVal);
-				}
-			}
-			$obj->write();
-
 			// Make sure the object is deployed to both stages.
 			if (Object::has_extension($obj->ClassName, 'Versioned')) {
 				$obj->doPublish();
@@ -105,6 +85,37 @@ class TestDataYamlFixture extends YamlFixture {
 			}
 
 			echo '.';
+		}
+	}
+
+	/**
+	 * Add automated publishing
+	 */
+	protected function writeRelations($dataClass, $items) {
+		foreach($items as $identifier => $fields) {
+			$obj = $this->objFromFixture($dataClass, $identifier);
+			
+			// Populate all relations
+			if($fields) foreach($fields as $fieldName => $fieldVal) {
+				if($obj->many_many($fieldName) || $obj->has_many($fieldName)) {
+					$parsedItems = array();
+					$items = preg_split('/ *, */',trim($fieldVal));
+					foreach($items as $item) {
+						$parsedItems[] = $this->parseFixtureVal($item);
+					}
+					if($obj->has_many($fieldName)) {
+						$obj->getComponents($fieldName)->setByIDList($parsedItems);
+					} elseif($obj->many_many($fieldName)) {
+						$obj->getManyManyComponents($fieldName)->setByIDList($parsedItems);
+					}
+				} elseif($obj->has_one($fieldName)) {
+					$obj->{$fieldName . 'ID'} = $this->parseFixtureVal($fieldVal);
+					$obj->write();
+					if (Object::has_extension($obj->ClassName, 'Versioned')) {
+						$obj->doPublish();
+					}
+				}
+			}
 		}
 	}
 }
