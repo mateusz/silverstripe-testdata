@@ -140,6 +140,11 @@ class TestDataYamlFixture extends YamlFixture {
 						$obj->getManyManyComponents($fieldName)->setByIDList($parsedItems);
 					}
 				} elseif($obj->has_one($fieldName)) {
+					if ($fieldName=='Parent' && $obj->URLSegment) {
+						// If we are changing the parent, nullify the URLSegment so the system can get rid of suffixes.
+						$obj->URLSegment = null;
+					}
+
 					$obj->{$fieldName . 'ID'} = $this->parseFixtureVal($fieldVal);
 					$obj->write();
 					if (Object::has_extension($obj->ClassName, 'Versioned')) {
