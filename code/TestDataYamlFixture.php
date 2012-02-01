@@ -88,8 +88,21 @@ class TestDataYamlFixture extends YamlFixture {
 				if($obj->many_many($fieldName) || $obj->has_many($fieldName) || $obj->has_one($fieldName)) continue;
 				$obj->$fieldName = $this->parseFixtureVal($fieldVal);
 			}
+
 			$obj->write();
-			
+
+			// when creating a Folder record, the directory should exist
+			if(is_a($obj, 'Folder')) {
+				if(!file_exists($obj->FullPath)) mkdir($obj->FullPath);
+				chmod($obj->FullPath, Filesystem::$file_create_mask);
+			}
+
+			// when creating a File record, the file should exist
+			if(is_a($obj, 'File')) {
+				touch($obj->FullPath);
+				chmod($obj->FullPath, Filesystem::$file_create_mask);
+			}
+
 			// has to happen before relations in case a class is referring to itself
 			$this->fixtureDictionary[$dataClass][$identifier] = $obj->ID;
 			
