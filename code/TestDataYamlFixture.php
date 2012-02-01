@@ -100,6 +100,12 @@ class TestDataYamlFixture extends YamlFixture {
 			// when creating a File record, the file should exist
 			if(is_a($obj, 'File')) {
 				touch($obj->FullPath);
+
+				// if there is a dummy file of the same name in a testdata dir, put it's contents into the newly created assets path
+				// @todo what priority do we set if test files are found in modules versus project code in mysite?
+				$result = glob(sprintf(BASE_PATH . '/*/testdata/files/%s', $obj->Name));
+				if($result) file_put_contents($obj->FullPath, file_get_contents($result[0]));
+
 				chmod($obj->FullPath, Filesystem::$file_create_mask);
 			}
 
