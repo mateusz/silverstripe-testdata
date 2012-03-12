@@ -54,6 +54,11 @@ The available commands are:
 		$this->message("Resetting");
 		$tags = DataObject::get('TestDataTag');
 		if ($tags) foreach ($tags as $tag) {
+			if(!class_exists($tag->Class)) {
+				$this->message("\n<span style=\"background: orange; color: black;\">WARNING: %s class does not exist, but has a TestDataTag record. Skipping...</span>\n");
+				continue;
+			}
+
 			if (Object::has_extension($tag->Class, 'Versioned')) {
 				// Needs to be removed from both stages
 				$oldMode = Versioned::get_reading_mode();
@@ -114,6 +119,11 @@ The available commands are:
 			$latestVersion = DB::query("SELECT MAX(\"Version\") FROM \"TestDataTag\" WHERE \"FixtureFile\"='$file'")->value();
 			$tags = DataObject::get('TestDataTag', "\"FixtureFile\"='$file' AND \"Version\"<'$latestVersion'");
 			if ($tags) foreach ($tags as $tag) {
+				if(!class_exists($tag->Class)) {
+					$this->message("\n<span style=\"background: orange; color: black;\">WARNING: %s class does not exist, but has a TestDataTag record. Skipping...</span>\n");
+					continue;
+				}
+
 				$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
 				if ($record) {
 					if (Object::has_extension($record->ClassName, 'Versioned')) {
