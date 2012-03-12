@@ -18,7 +18,7 @@ class TestDataYamlFixture extends YamlFixture {
 		DataObject::set_validation_enabled(false);
 		
 		$parser = new Spyc();
-		$fixtureContent = $parser->loadFile(Director::baseFolder().'/'.$this->fixtureFile);
+		$fixtureContent = $parser->loadFile($this->fixtureFile);
 
 		$this->fixtureDictionary = array();
 		foreach($fixtureContent as $dataClass => $items) {
