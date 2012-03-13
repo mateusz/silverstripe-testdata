@@ -43,6 +43,8 @@ class TestDataYamlFixture extends YamlFixture {
 	 * Mostly rewritten from parent, with changes that allow us to update objects (not only write new).
 	 */
 	protected function writeDataObject($dataClass, $items) {
+		File::$update_filesystem = false;
+
 		if (Director::isLive()) user_error('This should not be run on the live site.', E_USER_ERROR);
 		
 		$testDataTag = basename($this->fixtureFile);
