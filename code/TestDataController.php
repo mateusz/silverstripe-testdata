@@ -25,13 +25,13 @@ usage: dev/data/COMMAND[/PARAMETER]
 
 The available commands are:
 
-   load   Loads the data from yml files. The new records will be created, old removed and the 
+   load   Loads the data from yml files. The new records will be created, old removed and the
           existing ones updated. Added db objects are tracked, so it is possible to remove all
           of them later. The following COMMANDs are accepted:
             
              all
-                Scans the <wwwroot>/testdata/data directory for all available files and loads 
-                them into the database.
+                Scans the <wwwroot>/<project>/testdata directory for all available files and loads
+                them into the database
 
              name1,name2,...
                 Loads only the specified files - case insensitive, omit the .yml extension.
@@ -50,6 +50,9 @@ The available commands are:
 		}
 	}
 	
+	/**
+	 * Remove all data created by testdata - i.e. all rows referenced from the TestDataTag table.
+	 */
 	function reset($request) {
 		$this->message("Resetting");
 		$tags = DataObject::get('TestDataTag');
@@ -82,6 +85,9 @@ The available commands are:
 		return;
 	}
 
+	/**
+	 * Process the contents of the yml file specified via the first url parameter.
+	 */
 	function load($request) {
 		$requestedFiles = Convert::raw2xml(str_replace(' ', '', strtolower($request->param('ID'))));
 		if (!$requestedFiles) {

@@ -3,7 +3,7 @@
 
 class TestDataYamlFixture extends YamlFixture {
 	/**
-	 * Mostly rewritten from parent, but allows circular dependencies - goes throught the relation loop after
+	 * Mostly rewritten from parent, but allows circular dependencies - goes through the relation loop only after
 	 * the dictionary is fully populated.
 	 */
 	public function saveIntoDatabase() {
@@ -41,6 +41,8 @@ class TestDataYamlFixture extends YamlFixture {
 
 	/**
 	 * Mostly rewritten from parent, with changes that allow us to update objects (not only write new).
+	 * Also adds dummy file creation. The files will either be empty (touched only), or will be copied
+	 * from the testdata directory if found.
 	 */
 	protected function writeDataObject($dataClass, $items) {
 		File::$update_filesystem = false;

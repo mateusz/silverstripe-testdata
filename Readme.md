@@ -6,7 +6,8 @@
 
 ## Requirements 
 
-SilverStripe 2.4.x
+SilverStripe 3 (master)
+SilverStripe 2.4.x (branch 2.4)
 
 ## Installation 
 
@@ -16,10 +17,11 @@ SilverStripe 2.4.x
 ## Features
 
 - Allows easy injection of the test data via Yaml files
-- Data is added *on top* of the current database 
-- The test data can be updated, removed and added
+- Data is added *on top* of the current database
+- The test data can then be added, updated or removed
 - Test data can be broken down into chunks, separate Yaml files are allowed and can be added on the fly
-- Original YamlFixture is overriden to allow for circular references
+- Original YamlFixture class is overriden to allow for circular references within yml files
+- Creates dummy files (either empty, or content copied from file with matchin name)
 
 ## Usage
 
@@ -29,7 +31,7 @@ You can obtain the help message by calling the following:
 
 You can also access the module via your browser. Log in as admin and make sure your site is in the dev mode. Then visit:
 
-	<your_webroot>/dev/data
+	<site_url>/dev/data
 
 ### Basic workflow
 
@@ -70,6 +72,12 @@ When you are done, you can remove all data by using:
 	dev/data/reset
 
 And that's basically it.
+
+### Dummy files
+
+The files will be automatically created (touched) by the module so they are at least available.
+
+If you place a file in <wwwroot>/mysite/testdata/files with the same name as the one in your dummy fixture, the content will be automatically copied to the newly created file.
 
 ## Dev notes
 
