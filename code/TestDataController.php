@@ -72,7 +72,15 @@ The available commands are:
 			}
 			else {
 				$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
-				if ($record) $record->delete();
+				if ($record) {
+					// Some of the files (or parent folders) may have already been removed. 
+					// Rename call will crash in this case for the subsequent objects - ignore the exception.
+					try {
+						@$record->delete();
+					} catch(Exception $e) {
+						if (strpos($e->getMessage(), 'Cannot move')===false) throw $e;
+					}
+				}
 			}
 			$this->message('.');
 			$tag->delete();
