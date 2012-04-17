@@ -6,7 +6,7 @@ class TestDataYamlFixture extends YamlFixture {
 	 * Mostly rewritten from parent, but allows circular dependencies - goes through the relation loop only after
 	 * the dictionary is fully populated.
 	 */
-	public function saveIntoDatabase() {
+	public function saveIntoDatabase(DataModel $model) {
 		// Custom plumbing: this has to be executed only once per fixture.
 		$testDataTag = basename($this->fixtureFile);
 		$this->latestVersion = DB::query("SELECT MAX(\"Version\") FROM \"TestDataTag\" WHERE \"FixtureFile\"='$testDataTag'")->value();
@@ -23,7 +23,7 @@ class TestDataYamlFixture extends YamlFixture {
 		$this->fixtureDictionary = array();
 		foreach($fixtureContent as $dataClass => $items) {
 			if(ClassInfo::exists($dataClass)) {
-				$this->writeDataObject($dataClass, $items);
+				$this->writeDataObject($model, $dataClass, $items);
 			} else {
 				$this->writeSQL($dataClass, $items);
 			}
@@ -44,7 +44,7 @@ class TestDataYamlFixture extends YamlFixture {
 	 * Also adds dummy file creation. The files will either be empty (touched only), or will be copied
 	 * from the testdata directory if found.
 	 */
-	protected function writeDataObject($dataClass, $items) {
+	protected function writeDataObject($model, $dataClass, $items) {
 		File::$update_filesystem = false;
 
 		if (Director::isLive()) user_error('This should not be run on the live site.', E_USER_ERROR);
@@ -66,7 +66,7 @@ class TestDataYamlFixture extends YamlFixture {
 					$tag->delete(); // Tag not valid, delete.
 					$tag = null;
 				}
-				$obj = new $dataClass();
+				$obj = $model->$dataClass->newObject();
 			}
 			
 			// If an ID is explicitly passed, then we'll sort out the initial write straight away
@@ -128,7 +128,7 @@ class TestDataYamlFixture extends YamlFixture {
 				$tag->write();
 			}
 			else {
-				$tag = new TestDataTag;
+				$tag = $model->TestDataTag->newObject();
 				$tag->Class = $dataClass;
 				$tag->RecordID = $obj->ID;
 				$tag->FixtureFile = $testDataTag;

@@ -116,7 +116,7 @@ The available commands are:
 			// Update existing objects and add new ones
 			$this->message("Adding and updating objects for $fileBase");
 			$yml = new TestDataYamlFixture($this->getDataDir()."/".$file);
-			$yml->saveIntoDatabase();
+			$yml->saveIntoDatabase(DataModel::inst());
 			$this->message("\n");
 
 			// Remove the objects that fell behind - TestDataYamlFixture increments the tag
