@@ -2,6 +2,20 @@
 
 class TestDataExporter extends Controller {
 
+	static $allowed_actions = array(
+		'index',
+		'export',
+		'ExportForm'
+	);
+
+	function init() {
+		parent::init();
+
+		// Basic access check.
+		$canAccess = (Director::isDev() || Director::is_cli() || Permission::check("ADMIN"));
+		if(!$canAccess) return Security::permissionFailure($this);
+	}
+
 	/**
 	 * Builds the entry form so the user can choose what to export.
 	 */
