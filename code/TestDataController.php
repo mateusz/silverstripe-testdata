@@ -4,7 +4,7 @@ class TestDataController extends Controller {
 	static $data_dir;
 	static $quiet = false;
 
-	function getDataDir() {
+	static function get_data_dir() {
 		if (isset(self::$data_dir)) return self::$data_dir;
 		return project().'/testdata/';
 	}
@@ -102,10 +102,10 @@ The available commands are:
 			$requestedFiles = explode(',', $requestedFiles);
 		}
 
-		$files = scandir(BASE_PATH."/".$this->getDataDir()."/");
+		$files = scandir(BASE_PATH."/".self::get_data_dir()."/");
 		foreach ($files as $file) {
 			// Checking the validity of the file
-			if (strpos($file, '.yml')===false || $file[0]=='.' || !is_file(BASE_PATH."/".$this->getDataDir()."/".$file)) continue;
+			if (strpos($file, '.yml')===false || $file[0]=='.' || !is_file(BASE_PATH."/".self::get_data_dir()."/".$file)) continue;
 			
 			// Check if the file was requested
 			$fileBase = str_replace('.yml', '', $file);
@@ -115,7 +115,7 @@ The available commands are:
 
 			// Update existing objects and add new ones
 			$this->message("Adding and updating objects for $fileBase");
-			$yml = new TestDataYamlFixture($this->getDataDir()."/".$file);
+			$yml = new TestDataYamlFixture(self::get_data_dir()."/".$file);
 			$yml->saveIntoDatabase(DataModel::inst());
 			$this->message("\n");
 

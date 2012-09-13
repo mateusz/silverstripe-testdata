@@ -1,6 +1,7 @@
 <?php
 
 class TestDataExporter extends Controller {
+
 	/**
 	 * Builds the entry form so the user can choose what to export.
 	 */
@@ -18,16 +19,18 @@ class TestDataExporter extends Controller {
 
 			// 	Create a checkbox for including this object in the export file
 			$count = $class::get()->Count();
-			$fields->push(new CheckboxField("Class[$dataObjectName]", $dataObjectName." ($count)"));
+			$fields->push($class = new CheckboxField("Class[$dataObjectName]", $dataObjectName." ($count)"));
+			$class->addExtraClass('class-field');
 
 			// 	Create an ID range selection input
-			$fields->push(new TextField("Range[$dataObjectName]", ''));
+			$fields->push($range = new TextField("Range[$dataObjectName]", ''));
+			$range->addExtraClass('range-field');
 		}
-		// Create the "traverse relations" option checkbox - whether it should automatically include relation objects.
-		$fields->push(new CheckboxField('TraverseRelations', 'Traverse relations (if unchecked some relations might not be written)', 1));
+		// Create the "traverse relations" option - whether it should automatically include relation objects even if not explicitly ticked.
+		$fields->push(new CheckboxField('TraverseRelations', 'Traverse relations (implicitly includes objects, for example pulls Groups for Members): ', 1));
 
 		// Create file name input field
-		$fields->push(new TextField('FileName', 'Name of the output YML file', 'output.yml'));
+		$fields->push(new TextField('FileName', 'Name of the output YML file: ', 'output.yml'));
 	
 		// Create actions for the form
 		$actions = new FieldList(new FormAction("export", "Export"));
@@ -36,13 +39,63 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
+	 * Checks if the object is present in the the buckets (and queue).
+	 */
+	function objectPresent($object, $buckets, $queue = null) {
+		// Check buckets
+		if (isset($buckets[$object->ClassName]) && isset($buckets[$object->ClassName][$object->ID])) {
+			return true;
+		}
+
+		// Check queue
+		if ($queue) {
+			foreach ($queue as $queued) {
+				if ($queued->ClassName==$object->ClassName && $queued->ID==$object->ID) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Introspects the object's relationships and adds the relevant objects
 	 * into the queue, if not already processed and present in the buckets.
 	 */
-	function traverseRelations($object, $buckets, $queue) {
-		// For each object in relation
-		//  Check if the object is already processed into buckets
-		//  If not, add it to the queue.
+	function traverseRelations($object, $buckets, &$queue) {
+		// Traverse has one relations.
+		$oneRelations = array_merge(
+			($relation = $object->has_one()) ? $relation : array(),
+			($relation = $object->belongs_to()) ? $relation : array()
+		);
+		//  Check if the objects are already processed into buckets (or queued for processing)
+		foreach ($oneRelations as $relation => $class) {
+			$relatedObject = $object->$relation();
+			if (!$relatedObject || !$relatedObject->ID) continue;
+
+			if (!$this->objectPresent($relatedObject, $buckets, $queue)) {
+				$queue[] = $relatedObject;
+			}
+		}
+
+		// Same, but for *-many relations, with additional loop inside.
+		$manyRelations = array_merge(
+			($relation = $object->has_many()) ? $relation : array(),
+			($relation = $object->many_many()) ? $relation : array() // Includes belongs_many_many
+		);
+		foreach ($manyRelations as $relation => $class) {
+			$relatedObjects = $object->$relation();
+
+			// Step through all objects on the other side of this relation and check if already processed.
+			foreach ($relatedObjects as $relatedObject) {
+				if (!$relatedObject || !$relatedObject->ID) continue;
+
+				if (!$this->objectPresent($relatedObject, $buckets, $queue)) {
+					$queue[] = $relatedObject;
+				}
+			}
+		}
 	}
 
 	/**
@@ -65,6 +118,7 @@ class TestDataExporter extends Controller {
 		foreach ($object->toMap() as $field => $value) {
 			if (in_array($field, $noninterestingFields)) continue;
 
+			$value = str_replace('"', '\"', $value);
 			$output .= "\t\t$field: \"$value\"\n";
 		}
 
@@ -73,14 +127,14 @@ class TestDataExporter extends Controller {
 			$relatedObject = $object->$relation();
 
 			// Look up the object in the appropriate bucket - might not be there if cascading has been disabled.
-			if (isset($buckets[$relatedObject->ClassName]) && isset($buckets[$relatedObject->ClassName][$relatedObject->ID])) {
+			if ($this->objectPresent($relatedObject, $buckets)) {
 				$objectFromBucket = $buckets[$relatedObject->ClassName][$relatedObject->ID];
 				// Write out the YML relationship using the YML handle already created before.
 				$output .= "\t\t$relation: =>$objectFromBucket->ClassName.$objectFromBucket->YMLHandle\n";
 			}
 		}
 
-		// Process *-many relationships.
+		// Process *-many relationships (similar to the previous block, but with additional loop)
 		$manyRelations = array_merge(
 			($relation = $object->has_many()) ? $relation : array(),
 			($relation = $object->many_many()) ? $relation : array()
@@ -92,7 +146,7 @@ class TestDataExporter extends Controller {
 			$outputRelation = array();
 			foreach ($relatedObjects as $relatedObject) {
 				// Look up the object in the appropriate bucket - might not be there if cascading has been disabled - in this case just skip it.
-				if (isset($buckets[$relatedObject->ClassName]) && isset($buckets[$relatedObject->ClassName][$relatedObject->ID])) {
+				if ($this->objectPresent($relatedObject, $buckets)) {
 					$objectFromBucket = $buckets[$relatedObject->ClassName][$relatedObject->ID];
 					// Store for later
 					$outputRelation[] = "=>$objectFromBucket->ClassName.$objectFromBucket->YMLHandle";
@@ -115,6 +169,28 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
+	 * Processes the textual id list into a where clause.
+	 */
+	function generateIDs($textual, $class) {
+		$where = array();
+		$textual = preg_replace('/[^0-9,\-]/', '', $textual);
+		$baseClass = ClassInfo::baseDataClass($class);
+		foreach (explode(',', $textual) as $token) {
+			if (strpos($token, '-')===false) {
+				// Single ID
+				$where[] = "(\"$baseClass\".\"ID\"='".(int)$token."')";
+			}
+			else {
+				// Range
+				$range = explode('-', $token);
+				$where[] = "(\"$baseClass\".\"ID\" BETWEEN '".(int)$range[0]."' AND '".(int)$range[1]."')";
+			}
+		}
+
+		return implode($where, ' OR ');
+	}
+
+	/**
 	 * Processes the form and builds the output
 	 */
 	function export($data, $form) {
@@ -123,6 +199,16 @@ class TestDataExporter extends Controller {
 			exit;
 		}
 
+		if (!isset($data['Class'])) {
+			echo "Pick some classes.";
+			exit;
+		}
+
+		// Here we will collect all the output.
+		$output = '';
+
+		// We want to work off Draft, because that's what's visible in the CMS.
+		Versioned::reading_stage('Stage');
 
 		// Variables:
 		//  Queue for outstanding records to process.
@@ -133,7 +219,16 @@ class TestDataExporter extends Controller {
 		// Populate the queue of DataObjects to be exported
 		foreach ($data['Class'] as $dataObjectName => $checked) {
 			$class = singleton($dataObjectName);
+			if (!$class) continue;
+
+			// Apply the ID filter, if present.
+			if (isset($data['Range']) && isset($data['Range'][$dataObjectName]) && $data['Range'][$dataObjectName]) {
+				$where = $this->generateIDs($data['Range'][$dataObjectName], $dataObjectName);
+			}
+
 			$objects = $class::get();
+			if (isset($where)) $objects = $objects->where($where);
+
 			foreach ($objects as $object) {
 				array_push($queue, $object);
 			}
@@ -153,9 +248,6 @@ class TestDataExporter extends Controller {
 			}
 		}
 
-		// Here we will collect all the output.
-		$output = '';
-
 		foreach ($buckets as $name => $bucket) {
 			//  Write the bucket YML heading (object class)
 			$output .= "$name:\n";
@@ -166,8 +258,15 @@ class TestDataExporter extends Controller {
 			}
 		}
 
+		// Dump metadata
+		global $database;
+		$output .= "\n#db=$database";
+		$output .= "\n#time=".date('Y-m-d H:i:s');
+		$output .= "\n#params=".json_encode($data);
+
 		// Output the written data into a file specified in the form.
-		$file = BASE_PATH.'/testdata/generated/'.preg_replace('/[^a-z0-9\-_\.]/', '', $data['FileName']);
+		$path = BASE_PATH.'/'.TestDataController::get_data_dir();
+		$file = $path.preg_replace('/[^a-z0-9\-_\.]/', '', $data['FileName']);
 		file_put_contents($file, $output);
 
 		echo "File $file written.";
