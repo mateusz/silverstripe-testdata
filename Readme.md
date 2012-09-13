@@ -21,7 +21,8 @@ SilverStripe 2.4.x (branch 2.4)
 - The test data can then be added, updated or removed
 - Test data can be broken down into chunks, separate Yaml files are allowed and can be added on the fly
 - Original YamlFixture class is overriden to allow for circular references within yml files
-- Creates dummy files (either empty, or content copied from file with matchin name)
+- Creates dummy data files like images (either empty, or content copied from file with matching name)
+- (New) Exporter for automatically building your yml files - just select classes & IDs and they will be exported automatically (only on master).
 
 ## Usage
 
@@ -32,6 +33,11 @@ You can obtain the help message by calling the following:
 You can also access the module via your browser. Log in as admin and make sure your site is in the dev mode. Then visit:
 
 	<site_url>/dev/data
+
+To invoke exporter GUI visit:
+
+	<site_url>/dev/data/export
+
 
 ### Basic workflow
 
@@ -79,10 +85,22 @@ The files will be automatically created (touched) by the module so they are at l
 
 If you place a file in <wwwroot>/mysite/testdata/files with the same name as the one in your dummy fixture, the content will be automatically copied to the newly created file.
 
+### Exporter
+
+Exporter has been designed to easily build a human-editable database dump files. It will introspect the selected classes and pull them out into the Yaml. Exporter always operates on draft stage, to reflect what is being seen in the CMS. The loader on the other hand will always publish the incoming data into live, so as a result the live stage data is ignored completely for Testdata module's purposes. The file will be written to the data directory, usually <wwwroot>/mysite/testdata.
+
+Class selection is done by ticking the checkboxes next to the class names. The number in the brackets gives you the number of available objects, and the box on the right allows you to select IDs. Valid selections are:
+* Explicit numbers: 1,2,3
+* Range: 1-10
+* Mix of both: 1,2,4-7,5
+
+Exporter will also (if requested) follow relationships and include objects on the other side of the link. For example selecting a Member will also include the Groups he/she is in, which in turn will include Permissions. Or if explicit ID is being requested, for example Page with ID=2, it will also pull the page's parent, even if its ID is not contained on the requested list. This allows easy construction of comprehensive data sets.
+
 ## Dev notes
 
-1. Do not use this functionality on live.
+1. Remove the `TestDataTag` table from your database when going to production. This will prevent removing live data by mistake.
 1. The records are tracked on the basis of the Yaml filename and the Yaml handle, so you need to be aware that if you change any of these, TestData will think that you have added new records.
 1. Because of the above, you can update test records as long as you retain the filename and the Yaml handle. Their IDs will be retained, so your relations will stay intact.
 1. TestData will automatically publish versioned objects to Live, and remove them from both stages, so you don't have to do it manually.
 1. From the project perspective, we find it useful to keep a dummy.yml with data used for dev and testing, so everyone is at least using the same baseline. Apart from that, ia.yml is useful for keeping a clean IA for initial loading to the production server and for the client.
+1. Exporter output files contain some metadata on their last 3 lines to make the debugging easier.
