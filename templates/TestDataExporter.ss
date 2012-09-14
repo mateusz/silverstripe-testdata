@@ -15,7 +15,7 @@
 			width: 50px;
 			margin-left: 10px;
 		}
-		#TraverseRelations {
+		#TraverseRelations, #IncludeFiles {
 			clear: both;
 			margin-bottom: 0.5em;
 		}
