@@ -31,6 +31,9 @@ class TestDataExporter extends Controller {
 			$class = singleton($dataObjectName);
 			if($class instanceof TestOnly) continue;
 
+			// Skip testdata internal class
+			if ($class instanceof TestDataTag) continue;
+
 			// 	Create a checkbox for including this object in the export file
 			$count = $class::get()->Count();
 			$fields->push($class = new CheckboxField("Class[$dataObjectName]", $dataObjectName." ($count)"));
@@ -42,6 +45,10 @@ class TestDataExporter extends Controller {
 		}
 		// Create the "traverse relations" option - whether it should automatically include relation objects even if not explicitly ticked.
 		$fields->push(new CheckboxField('TraverseRelations', 'Traverse relations (implicitly includes objects, for example pulls Groups for Members): ', 1));
+
+		// Create the option to include real files.
+		$path = BASE_PATH.'/'.TestDataController::get_data_dir();
+		$fields->push(new CheckboxField('IncludeFiles', "Copy real files (into {$path}files)", 0));
 
 		// Create file name input field
 		$fields->push(new TextField('FileName', 'Name of the output YML file: ', 'output.yml'));
@@ -132,8 +139,16 @@ class TestDataExporter extends Controller {
 		foreach ($object->toMap() as $field => $value) {
 			if (in_array($field, $noninterestingFields)) continue;
 
-			$value = str_replace('"', '\"', $value);
-			$output .= "\t\t$field: \"$value\"\n";
+			if (strpos($value, "\n")) {
+				// Use YAML blocks to store newlines. The block needs to be at the next level of indentation.
+				$value = str_replace("\n", "\n\t\t\t", $value);
+				$output .= "\t\t$field: |\n\t\t\t$value\n";
+			}
+			else {
+				// Single-line value. Escape quotes and enclose in quotes.
+				$value = str_replace('"', '\"', $value);
+				$output .= "\t\t$field: \"$value\"\n";
+			}
 		}
 
 		// Process has-one relationships.
@@ -208,6 +223,8 @@ class TestDataExporter extends Controller {
 	 * Processes the form and builds the output
 	 */
 	function export($data, $form) {
+		increase_time_limit_to(600);
+
 		if (!isset($data['FileName']) || !$data['FileName']) {
 			echo "Specify file name.";
 			exit;
@@ -223,6 +240,14 @@ class TestDataExporter extends Controller {
 
 		// We want to work off Draft, because that's what's visible in the CMS.
 		Versioned::reading_stage('Stage');
+
+		// Prepare the filesystem.
+		$ymlDest = BASE_PATH.'/'.TestDataController::get_data_dir(); 
+		@mkdir($ymlDest);
+		if (isset($data['IncludeFiles']) && $data['IncludeFiles']) {
+			$fileDest = BASE_PATH.'/'.TestDataController::get_data_dir().'files';
+			@mkdir($fileDest);
+		}
 
 		// Variables:
 		//  Queue for outstanding records to process.
@@ -260,6 +285,17 @@ class TestDataExporter extends Controller {
 			if (isset($data['TraverseRelations']) && $data['TraverseRelations']) {
 				$this->traverseRelations($object, $buckets, $queue);
 			}
+
+			// If files should be included
+			if (isset($data['IncludeFiles']) && $data['IncludeFiles']) {
+				if ($object instanceof File && $object->ClassName!='Folder') {
+					$source = $object->getFullPath();
+					if ($source){
+						@copy($source, "$fileDest/$object->Filename");
+						echo "Processing $source to $fileDest/$object->Name.<br>\n";
+					}
+				}
+			}
 		}
 
 		foreach ($buckets as $name => $bucket) {
@@ -279,11 +315,10 @@ class TestDataExporter extends Controller {
 		$output .= "\n#params=".json_encode($data);
 
 		// Output the written data into a file specified in the form.
-		$path = BASE_PATH.'/'.TestDataController::get_data_dir();
-		$file = $path.preg_replace('/[^a-z0-9\-_\.]/', '', $data['FileName']);
+		$file = $ymlDest.preg_replace('/[^a-z0-9\-_\.]/', '', $data['FileName']);
 		file_put_contents($file, $output);
 
-		echo "File $file written.";
+		echo "File $file written.<br>\n";
 	}
 }
 
