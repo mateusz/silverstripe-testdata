@@ -54,6 +54,8 @@ The available commands are:
 	 * Remove all data created by testdata - i.e. all rows referenced from the TestDataTag table.
 	 */
 	function reset($request) {
+		increase_time_limit_to(600);
+
 		$this->message("Resetting");
 		$tags = DataObject::get('TestDataTag');
 		if ($tags) foreach ($tags as $tag) {
@@ -89,6 +91,8 @@ The available commands are:
 	 * Process the contents of the yml file specified via the first url parameter.
 	 */
 	function load($request) {
+		increase_time_limit_to(600);
+
 		$requestedFiles = Convert::raw2xml(str_replace(' ', '', strtolower($request->param('ID'))));
 		if (!$requestedFiles) {
 			$this->message('Parameter required.');
