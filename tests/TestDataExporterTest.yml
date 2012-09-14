@@ -1,0 +1,10 @@
+Page:
+	page1:
+		Title: page1
+		Content: |
+			Multi
+			Line
+	page2:
+		Title: page2
+		Content: Lorem ipsum 1
+		Parent: =>Page.page1
