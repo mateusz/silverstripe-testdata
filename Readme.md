@@ -9,6 +9,17 @@
 SilverStripe 3 (master)
 SilverStripe 2.4.x (branch 2.4)
 
+## Changelog
+
+2.1
+* Added TestDataExporter
+
+2.0
+* 3.0-compatible release
+
+1.0
+* 2.4-compatible release.
+
 ## Installation 
 
 1. Include the module folder in your project root folder and rename it to "testdata"
