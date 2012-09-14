@@ -103,6 +103,11 @@ class TestDataYamlFixture extends YamlFixture {
 
 			// when creating a File record, the file should exist
 			if(is_a($obj, 'File')) {
+				// Create the directory.
+				$dirPath = substr($obj->getFullPath(), 0, strrpos($obj->getFullPath(), '/'));
+				@mkdir($dirPath, 0777, true);
+
+				// Make sure the file exists.
 				touch($obj->FullPath);
 
 				// if there is a dummy file of the same name in a testdata dir, put it's contents into the newly created assets path
