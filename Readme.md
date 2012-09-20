@@ -39,7 +39,7 @@ SilverStripe 2.4.x (branch 2.4)
 
 You can obtain the help message by calling the following:
 
-	sapphire/sake dev/data
+	framework/sake dev/data
 
 You can also access the module via your browser. Log in as admin and make sure your site is in the dev mode. Then visit:
 
