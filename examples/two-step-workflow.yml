@@ -1,0 +1,132 @@
+Group:
+	editors:
+		Code: editors
+		Title: Editors
+	publishers:
+		Code: publishers
+		Title: Publishers
+Permission:
+	e1:
+		Group: =>Group.editors
+		Code: CMS_ACCESS_CMSMain
+	e2:
+		Group: =>Group.editors
+		Code: CMS_ACCESS_AssetAdmin
+	e3:
+		Group: =>Group.editors
+		Code: CMS_ACCESS_ReportAdmin
+	e4:
+		Group: =>Group.editors
+		Code: SITETREE_REORGANISE
+	p1:
+		Group: =>Group.publishers
+		Code: CMS_ACCESS_CMSMain
+	p2:
+		Group: =>Group.publishers
+		Code: CMS_ACCESS_AssetAdmin
+	p3:
+		Group: =>Group.publishers
+		Code: CMS_ACCESS_ReportAdmin
+	p4:
+		Group: =>Group.publishers
+		Code: SITETREE_REORGANISE
+
+WorkflowDefinition:
+	twostep:
+		Title: Two step
+		Description: Workflow with editors requesting changes and publishers accepting them.
+		Groups: =>Group.editors
+
+AssignUsersToWorkflowAction:
+	action1:
+		Sort: 1
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Apply for approval
+		AllowEditing: "By Assignees"
+		Groups: =>Group.publishers
+	action5:
+		Sort: 5
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Request changes
+		AssignInitiator: 1
+		AllowEditing: "By Assignees"
+
+NotifyUsersWorkflowAction:
+	action2:
+		Sort: 2
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Notify publishers
+		EmailSubject: Publication request
+		EmailTemplate: "$Member.FirstName $Member.Surname requested the '$Context.Title' to be published.<br><a href="$Context.CMSLink">Visit this page</a> in the CMS to respond.<br>$CommentHistory"
+		AllowEditing: "By Assignees"
+	action6:
+		Sort: 6
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Notify publishers
+		EmailSubject: Publisher requested changes
+		EmailTemplate: "The publisher has requested some changes on '$Context.Title' before it can be published.<br><a href="$Context.CMSLink">Visit this page</a> in the CMS to respond.<br>$CommentHistory"
+		AllowEditing: "By Assignees"
+SimpleApprovalWorkflowAction:
+	action:
+		Sort: 3
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Continue workflow
+		AllowEditing: "By Assignees"
+
+PublishItemWorkflowAction:
+	action:
+		Sort: 4
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Publish item
+		PublishDelay: 0
+		AllowEditing: "By Assignees"
+
+CancelWorkflowAction:
+	action:
+		Sort: 7
+		WorkflowDef: =>WorkflowDefinition.twostep
+		Title: Cancel
+		AllowEditing: "By Assignees"
+
+WorkflowTransition:
+	t1:
+		Title: Send notification
+		Sort: 1
+		Action: =>AssignUsersToWorkflowAction.action1
+		NextAction: =>NotifyUsersWorkflowAction.action2
+	t2:
+		Title: Wait for approval
+		Sort: 2
+		Action: =>NotifyUsersWorkflowAction.action2
+		NextAction: =>SimpleApprovalWorkflowAction.action
+	t3:
+		Title: Approve
+		Sort: 3
+		Action: =>SimpleApprovalWorkflowAction.action
+		NextAction: =>PublishItemWorkflowAction.action
+	t4:
+		Title: Reject
+		Sort: 4
+		Action: =>SimpleApprovalWorkflowAction.action
+		NextAction: =>CancelWorkflowAction.action
+	t5:
+		Title: Request changes
+		Sort: 5
+		Action: =>SimpleApprovalWorkflowAction.action
+		NextAction: =>AssignUsersToWorkflowAction.action5
+	t6:
+		Title: Send notification
+		Sort: 6
+		Action: =>AssignUsersToWorkflowAction.action5
+		NextAction: =>NotifyUsersWorkflowAction.action6
+	t7:
+		Title: Resubmit
+		Sort: 7
+		Action: =>NotifyUsersWorkflowAction.action6
+		NextAction: =>AssignUsersToWorkflowAction.action1
+	t8:
+		Title: Cancel
+		Sort: 8
+		Action: =>NotifyUsersWorkflowAction.action6
+		NextAction: =>CancelWorkflowAction.action
+
