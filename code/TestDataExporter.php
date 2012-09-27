@@ -291,7 +291,7 @@ class TestDataExporter extends Controller {
 				if ($object instanceof File && $object->ClassName!='Folder') {
 					$source = $object->getFullPath();
 					if ($source){
-						@copy($source, "$fileDest/$object->Filename");
+						@copy($source, "$fileDest/$object->Name");
 						echo "Processing $source to $fileDest/$object->Name.<br>\n";
 					}
 				}
