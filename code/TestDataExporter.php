@@ -25,6 +25,7 @@ class TestDataExporter extends Controller {
 		// Get the list of available DataObjects
 		$dataObjectNames = ClassInfo::subclassesFor('DataObject');
 		unset($dataObjectNames['DataObject']);
+		sort($dataObjectNames);
 
 		foreach ($dataObjectNames as $dataObjectName) {
 			// Skip test only classes.
@@ -60,7 +61,7 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
-	 * Checks if the object is present in the the buckets (and queue).
+	 * Checks if the object is present in the the buckets and queue.
 	 */
 	function objectPresent($object, $buckets, $queue = null) {
 		// Check buckets
@@ -82,7 +83,7 @@ class TestDataExporter extends Controller {
 
 	/**
 	 * Introspects the object's relationships and adds the relevant objects
-	 * into the queue, if not already processed and present in the buckets.
+	 * into the queue, if not already processed into the buckets.
 	 */
 	function traverseRelations($object, $buckets, &$queue) {
 		// Traverse has one relations.
@@ -130,7 +131,7 @@ class TestDataExporter extends Controller {
 		$output .= "\t$object->YMLHandle:\n";
 
 		// Find relational and meta fields we are not interested in writing right now.
-		$noninterestingFields = array('ID', 'Created', 'LastEdited', 'ClassName', 'RecordClassName', 'YMLHandle');
+		$noninterestingFields = array('ID', 'Created', 'LastEdited', 'ClassName', 'RecordClassName', 'YMLHandle', 'Version');
 		foreach (array_keys($object->has_one()) as $relation) {
 			array_push($noninterestingFields, $relation.'ID');
 		}
@@ -198,7 +199,7 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
-	 * Processes the textual id list into a where clause.
+	 * Processes the textual id list coming from the form into a database where clause.
 	 */
 	function generateIDs($textual, $class) {
 		$where = array();
@@ -273,7 +274,7 @@ class TestDataExporter extends Controller {
 			}
 		}
 
-		// While queue is not empty
+		// Collect all the requested objects (and related objects) into buckets.
 		while ($object = array_shift($queue)) {
 			// Generate and attach the unique YML handle (=>generateHandle)
 			$object->YMLHandle = $this->generateHandle($object);
@@ -298,11 +299,11 @@ class TestDataExporter extends Controller {
 			}
 		}
 
+		// Write objects.
 		foreach ($buckets as $name => $bucket) {
 			//  Write the bucket YML heading (object class)
 			$output .= "$name:\n";
 
-			//  For each object in the bucket
 			foreach ($bucket as $dataObject) {
 				$output .= $this->generateYML($dataObject, $buckets);
 			}
