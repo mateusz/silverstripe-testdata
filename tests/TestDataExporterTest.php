@@ -2,18 +2,18 @@
 
 class TestDataExporterTest extends SapphireTest {
 	static $fixture_file = 'testdata/tests/TestDataExporterTest.yml';
-	
+
 	function testObjectPresent() {
 		$exporter = new TestDataExporter();
 		
 		$page1 = new Page();
-		$page1->ID = 5;
+		$page1->YMLTag = 'Page1';
 		$page2 = new Page();
-		$page2->ID = 6;
+		$page2->YMLTag = 'Page2';
 		$otherPage = new Page();
-		$otherPage->ID = 4;
+		$otherPage->YMLTag = 'Page3';
 
-		$buckets = array('Page'=>array('5'=>$page1));
+		$buckets = array('Page'=>array('Page1'=>$page1));
 		$queue = array($page2);
 
 		$this->assertFalse($exporter->objectPresent($otherPage, $buckets, $queue));
@@ -43,32 +43,71 @@ class TestDataExporterTest extends SapphireTest {
 
 	function testGenerateYML() {
 		$exporter = new TestDataExporter();
+		$exporter->currentFixtureFile = 'output.yml';
 
 		$page1 = $this->objFromFixture('Page', 'page1');
-		$page1->YMLHandle = 'page1ymlhandle';
+		$exporter->assureHasTag($page1); // Will take first free number - "Page1"
 		$page2 = $this->objFromFixture('Page', 'page2');
-		$page2->YMLHandle = 'page2ymlhandle';
+		$exporter->assureHasTag($page2); // "Page2"
 
 		// Fake buckets
 		$buckets = array(
-			'Page'=>array($page1->ID=>$page1, $page2->ID=>$page2)
+			'Page'=>array($page1->YMLTag=>$page1, $page2->YMLTag=>$page2)
 		);
 
 		$yml = $exporter->generateYML($page2, $buckets, "Correctly export yml and includes parent relation");
-		$this->assertContains('Parent: =>Page.page1ymlhandle', $yml);
+		$this->assertContains('Parent: =>Page.Page1', $yml);
 		$this->assertContains('Content: "'.$page2->Content.'"', $yml);
 
 		$yml = $exporter->generateYML($page1, $buckets, "Correctly exports multi line values");
 		$this->assertContains("Content: |\n\t\t\tMulti\n\t\t\tLine", $yml);
 	}
 
-	function testGenerateHandle() {
+	function testGetTagNew() {
 		$exporter = new TestDataExporter();
 
 		$page = new Page();
 		$page->ID = 7;
 
-		$this->assertEquals($exporter->generateHandle($page), 'Page7', "Generates hadle from ID and class");
+		$this->assertEquals($exporter->getTag($page), 'Page1', "Generates tag as '<class>1' if no TestDataTags are there.");
+	}
+
+	function testGetTagNewWithExisting() {
+		$exporter = new TestDataExporter();
+		$exporter->currentFixtureFile = 'output.yml';
+
+		// Fake some previous tag.
+		$testdatatag = new TestDataTag();
+		$testdatatag->Class = 'Page';
+		$testdatatag->RecordID = '123';
+		$testdatatag->FixtureID = 'Page100';
+		$testdatatag->FixtureFile = 'output.yml';
+		$testdatatag->Version = 1;
+		$testdatatag->write();
+
+		$page = new Page();
+		$page->ID = 7;
+
+		$this->assertEquals($exporter->getTag($page), 'Page101', "Generates tag from class and next available number.");
+	}
+
+	function testGetTagOldWithExisting() {
+		$exporter = new TestDataExporter();
+		$exporter->currentFixtureFile = 'output.yml';
+
+		// Fake some previous tag.
+		$testdatatag = new TestDataTag();
+		$testdatatag->Class = 'Page';
+		$testdatatag->RecordID = '123';
+		$testdatatag->FixtureID = 'Page100';
+		$testdatatag->FixtureFile = 'output.yml';
+		$testdatatag->Version = 1;
+		$testdatatag->write();
+
+		$page = new Page();
+		$page->ID = 123;
+
+		$this->assertEquals($exporter->getTag($page), 'Page100', "Provides exsiting tag if record already in TestDataTag table.");
 	}
 
 	function testGenerateIDs() {
