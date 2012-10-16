@@ -8,6 +8,8 @@ class TestDataExporter extends Controller {
 		'ExportForm'
 	);
 
+	public $currentFixtureFile = '';
+
 	function init() {
 		parent::init();
 
@@ -25,6 +27,7 @@ class TestDataExporter extends Controller {
 		// Get the list of available DataObjects
 		$dataObjectNames = ClassInfo::subclassesFor('DataObject');
 		unset($dataObjectNames['DataObject']);
+		sort($dataObjectNames);
 
 		foreach ($dataObjectNames as $dataObjectName) {
 			// Skip test only classes.
@@ -60,18 +63,20 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
-	 * Checks if the object is present in the the buckets (and queue).
+	 * Checks if the object is present in the the buckets and queue.
 	 */
 	function objectPresent($object, $buckets, $queue = null) {
 		// Check buckets
-		if (isset($buckets[$object->ClassName]) && isset($buckets[$object->ClassName][$object->ID])) {
+		$this->assureHasTag($object);
+		if (isset($buckets[$object->ClassName]) && isset($buckets[$object->ClassName][$object->YMLTag])) {
 			return true;
 		}
 
 		// Check queue
 		if ($queue) {
 			foreach ($queue as $queued) {
-				if ($queued->ClassName==$object->ClassName && $queued->ID==$object->ID) {
+				$this->assureHasTag($queued);
+				if ($queued->ClassName==$object->ClassName && $queued->YMLTag==$object->YMLTag) {
 					return true;
 				}
 			}
@@ -82,7 +87,7 @@ class TestDataExporter extends Controller {
 
 	/**
 	 * Introspects the object's relationships and adds the relevant objects
-	 * into the queue, if not already processed and present in the buckets.
+	 * into the queue, if not already processed into the buckets.
 	 */
 	function traverseRelations($object, $buckets, &$queue) {
 		// Traverse has one relations.
@@ -95,6 +100,7 @@ class TestDataExporter extends Controller {
 			$relatedObject = $object->$relation();
 			if (!$relatedObject || !$relatedObject->ID) continue;
 
+			$this->assureHasTag($relatedObject);
 			if (!$this->objectPresent($relatedObject, $buckets, $queue)) {
 				$queue[] = $relatedObject;
 			}
@@ -112,6 +118,7 @@ class TestDataExporter extends Controller {
 			foreach ($relatedObjects as $relatedObject) {
 				if (!$relatedObject || !$relatedObject->ID) continue;
 
+				$this->assureHasTag($relatedObject);
 				if (!$this->objectPresent($relatedObject, $buckets, $queue)) {
 					$queue[] = $relatedObject;
 				}
@@ -126,11 +133,11 @@ class TestDataExporter extends Controller {
 	function generateYML($object, $buckets) {
 		$output = '';
 
-		// Write out the YML handle
-		$output .= "\t$object->YMLHandle:\n";
+		// Write out the YML tag
+		$output .= "\t$object->YMLTag:\n";
 
 		// Find relational and meta fields we are not interested in writing right now.
-		$noninterestingFields = array('ID', 'Created', 'LastEdited', 'ClassName', 'RecordClassName', 'YMLHandle');
+		$noninterestingFields = array('ID', 'Created', 'LastEdited', 'ClassName', 'RecordClassName', 'YMLTag', 'Version');
 		foreach (array_keys($object->has_one()) as $relation) {
 			array_push($noninterestingFields, $relation.'ID');
 		}
@@ -157,9 +164,9 @@ class TestDataExporter extends Controller {
 
 			// Look up the object in the appropriate bucket - might not be there if cascading has been disabled.
 			if ($this->objectPresent($relatedObject, $buckets)) {
-				$objectFromBucket = $buckets[$relatedObject->ClassName][$relatedObject->ID];
-				// Write out the YML relationship using the YML handle already created before.
-				$output .= "\t\t$relation: =>$objectFromBucket->ClassName.$objectFromBucket->YMLHandle\n";
+				$objectFromBucket = $buckets[$relatedObject->ClassName][$relatedObject->YMLTag];
+				// Write out the YML relationship using the YML tag already created before.
+				$output .= "\t\t$relation: =>$objectFromBucket->ClassName.$objectFromBucket->YMLTag\n";
 			}
 		}
 
@@ -176,9 +183,9 @@ class TestDataExporter extends Controller {
 			foreach ($relatedObjects as $relatedObject) {
 				// Look up the object in the appropriate bucket - might not be there if cascading has been disabled - in this case just skip it.
 				if ($this->objectPresent($relatedObject, $buckets)) {
-					$objectFromBucket = $buckets[$relatedObject->ClassName][$relatedObject->ID];
+					$objectFromBucket = $buckets[$relatedObject->ClassName][$relatedObject->YMLTag];
 					// Store for later
-					$outputRelation[] = "=>$objectFromBucket->ClassName.$objectFromBucket->YMLHandle";
+					$outputRelation[] = "=>$objectFromBucket->ClassName.$objectFromBucket->YMLTag";
 				}
 			}
 			if (count($outputRelation)) {
@@ -190,15 +197,56 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
-	 * Prepares an automatic YML handle for the object.
+	 * Prepares an automatic YML tag for the object.
+	 * Reuses an existing tag, if present from the previous import so we can reexport correctly.
 	 */
-	function generateHandle($object) {
-		// Create handle from object class and ID.
-		return $object->ClassName.$object->ID;
+	function getTag($object) {
+		$existingTag = TestDataTag::get()->
+							filter(array('Class'=>$object->ClassName, 'RecordID'=>$object->ID, 'FixtureFile'=>$this->currentFixtureFile))->
+							sort('Version', 'DESC')->
+							First();
+
+		if ($existingTag) {
+			// Use existing YML tag.
+			return $existingTag->FixtureID;
+		}
+		else {
+			// Create a new YML tag.
+
+			// First, extract the highest present numeric suffix for a same-class same-file tag.
+			$existingTags = DB::query("SELECT DISTINCT \"FixtureID\" FROM \"TestDataTag\" WHERE \"Class\"='$object->ClassName' AND \"FixtureFile\"='$this->currentFixtureFile'")->column("FixtureID");
+			foreach ($existingTags as $key => $tag) {
+				$existingTags[$key] = (int)preg_replace("/[^0-9]/", '', $tag);
+			}
+
+			$newTagID = 1;
+			if (count($existingTags)) {
+				rsort($existingTags);
+				$newTagID = $existingTags[0]+1;
+			}
+
+			// Pull the exported records into the TestDataTag table.
+			$tag = new TestDataTag();
+			$tag->Class = $object->ClassName;
+			$tag->RecordID = $object->ID;
+			$tag->FixtureFile = $this->currentFixtureFile;
+			$tag->FixtureID = $object->ClassName.$newTagID;
+			$tag->Version = 1;
+			$tag->write();
+
+			return $tag->FixtureID;
+		}
 	}
 
 	/**
-	 * Processes the textual id list into a where clause.
+	 * Ensures object has an YML tag.
+	 */
+	function assureHasTag($object) {
+		if (!$object->YMLTag) $object->YMLTag = $this->getTag($object);
+	}
+
+	/**
+	 * Processes the textual id list coming from the form into a database where clause.
 	 */
 	function generateIDs($textual, $class) {
 		$where = array();
@@ -234,6 +282,8 @@ class TestDataExporter extends Controller {
 			echo "Pick some classes.";
 			exit;
 		}
+
+		$this->currentFixtureFile = $data['FileName'];
 
 		// Here we will collect all the output.
 		$output = '';
@@ -273,13 +323,13 @@ class TestDataExporter extends Controller {
 			}
 		}
 
-		// While queue is not empty
+		// Collect all the requested objects (and related objects) into buckets.
 		while ($object = array_shift($queue)) {
-			// Generate and attach the unique YML handle (=>generateHandle)
-			$object->YMLHandle = $this->generateHandle($object);
+			// Generate and attach the unique YML tag
+			$this->assureHasTag($object);
 
 			//  Add the object to the relevant bucket (e.g. "Page") by ID
-			$buckets[$object->ClassName][$object->ID] = $object;
+			$buckets[$object->ClassName][$object->YMLTag] = $object;
 
 			// 	If traversing has been enabled
 			if (isset($data['TraverseRelations']) && $data['TraverseRelations']) {
@@ -298,11 +348,11 @@ class TestDataExporter extends Controller {
 			}
 		}
 
+		// Write objects.
 		foreach ($buckets as $name => $bucket) {
 			//  Write the bucket YML heading (object class)
 			$output .= "$name:\n";
 
-			//  For each object in the bucket
 			foreach ($bucket as $dataObject) {
 				$output .= $this->generateYML($dataObject, $buckets);
 			}
@@ -315,7 +365,7 @@ class TestDataExporter extends Controller {
 		$output .= "\n#params=".json_encode($data);
 
 		// Output the written data into a file specified in the form.
-		$file = $ymlDest.preg_replace('/[^a-z0-9\-_\.]/', '', $data['FileName']);
+		$file = $ymlDest.preg_replace('/[^a-z0-9\-_\.]/', '', $this->currentFixtureFile);
 		file_put_contents($file, $output);
 
 		echo "File $file written.<br>\n";
