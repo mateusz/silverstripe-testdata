@@ -109,6 +109,14 @@ Exporter will also (if requested) follow relationships and include objects on th
 
 Another option is to include real files in the dump. Exporter will store them in <wwwroot>/mysite/testdata/files without nesting, which means that if the name collision occurs the files will be overwritten.
 
+### Exporter in team projects
+
+Exporter now respects the existing TestDataTags. This will allow you to re-export objects previously imported from someone else without labels being changed in the process.
+
+The way it works is that the tag generator within the exporter looks objects up in TestDataTag table and uses whatever it finds there. If the object has not previously been imported nor exported, it will create a new tag and write it to the table. In this way a tag-to-id mapping is created on each developer machine and the yml file becomes portable.
+
+One thing to be aware though is that the mapping of the objects includes file name lookup, so make sure you are exporting directly to the same filename (do not rename files later because you will loose this mapping capability).
+
 ## Dev notes
 
 1. Remove the `TestDataTag` table from your database when going to production. This will prevent removing live data by mistake.
@@ -117,3 +125,4 @@ Another option is to include real files in the dump. Exporter will store them in
 1. TestData will automatically publish versioned objects to Live, and remove them from both stages, so you don't have to do it manually.
 1. From the project perspective, we find it useful to keep a dummy.yml with data used for dev and testing, so everyone is at least using the same baseline. Apart from that, ia.yml is useful for keeping a clean IA for initial loading to the production server and for the client.
 1. Exporter output files contain some metadata on their last 3 lines to make the debugging easier.
+1. When working as a team and using exporter, export directly to the specific yml file. Otherwise mapping will not trigger.
