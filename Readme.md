@@ -100,8 +100,6 @@ If you place a file in <wwwroot>/mysite/testdata/files with the same name as the
 
 Exporter has been designed to easily build a human-editable database dump files. It will introspect the selected classes and pull them out into the Yaml. Exporter always operates on draft stage, to reflect what is being seen in the CMS. The loader on the other hand will always publish the incoming data into live, so as a result the live stage data is ignored completely for Testdata module's purposes. The file will be written to the data directory, usually <wwwroot>/mysite/testdata.
 
-Caveat programmer! Exporter will store all files in the same directory, regardless of their path, which means that if the name collision occurs the files will be overwritten.
-
 Class selection is done by ticking the checkboxes next to the class names. The number in the brackets gives you the number of available objects, and the box on the right allows you to select IDs. Valid selections are:
 * Explicit numbers: 1,2,3
 * Range: 1-10
@@ -109,7 +107,7 @@ Class selection is done by ticking the checkboxes next to the class names. The n
 
 Exporter will also (if requested) follow relationships and include objects on the other side of the link. For example selecting a Member will also include the Groups he/she is in, which in turn will include Permissions. Or if explicit ID is being requested, for example Page with ID=2, it will also pull the page's parent, even if its ID is not contained on the requested list. This allows easy construction of comprehensive data sets.
 
-
+Another option is to include real files in the dump. Exporter will store them in <wwwroot>/mysite/testdata/files without nesting, which means that if the name collision occurs the files will be overwritten.
 
 ## Dev notes
 
