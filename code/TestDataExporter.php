@@ -348,6 +348,13 @@ class TestDataExporter extends Controller {
 			}
 		}
 
+		// Sort the buckets so the records can be updated in place
+		ksort($buckets, SORT_STRING);
+		foreach ($buckets as $key=>$bucket) {
+			ksort($bucket, SORT_STRING);
+			$buckets[$key] = $bucket;
+		}
+
 		// Write objects.
 		foreach ($buckets as $name => $bucket) {
 			//  Write the bucket YML heading (object class)
