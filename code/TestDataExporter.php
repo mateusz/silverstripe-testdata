@@ -24,6 +24,19 @@ class TestDataExporter extends Controller {
 	function ExportForm() {
 		$fields = new FieldList();
 
+		// Display available yml files so we can re-export easily.
+		$ymlDest = BASE_PATH.'/'.TestDataController::get_data_dir(); 
+		$existingFiles = scandir($ymlDest);
+		$ymlFiles = array();
+		foreach ($existingFiles as $file) {
+			if (preg_match("/.*\.yml/", $file)) {
+				$ymlFiles[$file] = $file;
+			}
+		}
+		if ($ymlFiles) {
+			$fields->push(new DropdownField('Reexport', 'Reexport to file (will override any other setting): ', $ymlFiles, '', null, '-- choose file --'));
+		}
+
 		// Get the list of available DataObjects
 		$dataObjectNames = ClassInfo::subclassesFor('DataObject');
 		unset($dataObjectNames['DataObject']);
@@ -268,11 +281,32 @@ class TestDataExporter extends Controller {
 	}
 
 	/**
+	 * Decodes the meta parameters from the string (presumably file content).
+	 */
+	function extractParams($content) {
+		if (preg_match('/^#params=(.*)$/m', $content, $params)) {
+			return json_decode($params[1], true);
+		}
+
+		return null;
+	}
+
+	/**
 	 * Processes the form and builds the output
 	 */
 	function export($data, $form) {
 		increase_time_limit_to(600);
+		$ymlDest = BASE_PATH.'/'.TestDataController::get_data_dir();
 
+		// If we are reexporting, override all the other settings in the form from the file.
+		if (isset($data['Reexport']) && $data['Reexport']) {
+			$data['Reexport'] = preg_replace('/[^a-z0-9\-_\.]/', '', $data['Reexport']);
+
+			$params = $this->extractParams(file_get_contents($ymlDest.$data['Reexport']));
+			$data = array_merge($data, $params);
+		}
+
+		// Simple validation
 		if (!isset($data['FileName']) || !$data['FileName']) {
 			echo "Specify file name.";
 			exit;
@@ -292,7 +326,6 @@ class TestDataExporter extends Controller {
 		Versioned::reading_stage('Stage');
 
 		// Prepare the filesystem.
-		$ymlDest = BASE_PATH.'/'.TestDataController::get_data_dir(); 
 		@mkdir($ymlDest);
 		if (isset($data['IncludeFiles']) && $data['IncludeFiles']) {
 			$fileDest = BASE_PATH.'/'.TestDataController::get_data_dir().'files';
