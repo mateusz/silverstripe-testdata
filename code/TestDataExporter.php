@@ -325,11 +325,6 @@ class TestDataExporter extends Controller {
 		// We want to work off Draft, because that's what's visible in the CMS.
 		Versioned::reading_stage('Stage');
 
-		// Disable Translatable augmentation so we can export across the locales.
-		if (class_exists('Translatable')) {
-			Translatable::disable_locale_filter();
-		}
-
 		// Prepare the filesystem.
 		@mkdir($ymlDest);
 		if (isset($data['IncludeFiles']) && $data['IncludeFiles']) {
