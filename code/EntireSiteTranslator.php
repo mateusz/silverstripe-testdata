@@ -14,6 +14,11 @@ class EntireSiteTranslator extends Controller {
 	function init() {
 		parent::init();
 
+		if (!class_exists('Translatable')) {
+			echo "Translatable is not present on this site.<br/>\n";
+			exit;
+		}
+
 		// Basic access check.
 		$canAccess = (Director::isDev() || Director::is_cli() || Permission::check("ADMIN"));
 		if(!$canAccess) return Security::permissionFailure($this);
