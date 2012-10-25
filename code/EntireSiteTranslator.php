@@ -104,6 +104,10 @@ class EntireSiteTranslator extends Controller {
 
 		Translatable::set_current_locale($data['From']);
 		$pages = SiteTree::get();
+
+		// Remove the target locale's site.
+		SiteTree::get()->filter('Locale', $data['To'])->removeAll();
+
 		foreach ($pages as $page) {
 			echo "Now processing $page->ID<br/>\n";
 
