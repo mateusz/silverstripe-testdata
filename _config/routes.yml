@@ -6,3 +6,5 @@ Director:
     'dev/data/export//$Action/$ID/$OtherID': 'TestDataExporter'
     'dev/data/TestDataExporter//$Action/$ID/$OtherID': 'TestDataExporter'
     'dev/data//$Action/$ID/$OtherID':  'TestDataController'
+    'dev/translate/EntireSiteTranslator//$Action/$ID/$OtherID': 'EntireSiteTranslator'
+    'dev/translate//$Action/$ID/$OtherID': 'EntireSiteTranslator'
