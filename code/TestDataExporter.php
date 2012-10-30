@@ -159,8 +159,9 @@ class TestDataExporter extends Controller {
 		foreach ($object->toMap() as $field => $value) {
 			if (in_array($field, $noninterestingFields)) continue;
 
-			// We can only write basic types, we don't know how to serialise objects.
-			if (is_object($value)) continue;
+			// Verify if the field is real DB field
+		$dbField = $object->dbObject($field);
+		if (!is_object($dbField) || !($dbField instanceof DBField)) continue;
 
 			if (strpos($value, "\n")) {
 				// Use YAML blocks to store newlines. The block needs to be at the next level of indentation.
