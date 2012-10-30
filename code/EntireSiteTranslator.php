@@ -51,9 +51,9 @@ class EntireSiteTranslator extends Controller {
 		foreach ($object->toMap() as $field => $value) {
 			if (in_array($field, $noninterestingFields)) continue;
 			// Skip non-textual fields
-			$dbField = $object->obj($field);
-			if (!is_object($dbField) || !($dbField instanceof DBField)) continue;
-			$class = get_class($dbField);
+			$dbObject = $object->dbObject($field);
+			if (!is_object($dbObject) || !($dbObject instanceof DBField)) continue;
+			$class = get_class($dbObject);
 			if (!in_array($class, array('Varchar', 'HTMLText', 'Text'))) continue;
 
 			if ($class=='HTMLText') {
