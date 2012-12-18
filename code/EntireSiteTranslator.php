@@ -32,6 +32,7 @@ class EntireSiteTranslator extends Controller {
 
 		$fields->push(new LanguageDropdownField('From', 'From language'));
 		$fields->push(new LanguageDropdownField('To', 'To language'));
+		$fields->push(new CheckboxField('Mangle', 'Mangle with ROT13'));
 	
 		// Create actions for the form
 		$actions = new FieldList(new FormAction("translate", "Translate"));
@@ -104,6 +105,11 @@ class EntireSiteTranslator extends Controller {
 			exit;
 		}
 
+		$mangle = false;
+		if (isset($data['Mangle']) && $data['Mangle']) {
+			$mangle = true;
+		}
+
 		// We want to work off Draft, because that's what's visible in the CMS.
 		Versioned::reading_stage('Stage');
 
@@ -133,7 +139,9 @@ class EntireSiteTranslator extends Controller {
 				}
 				else {
 					$translation = $stackPage->createTranslation($data['To']);
-					$this->fakeTranslation($translation);
+
+					if ($mangle) $this->fakeTranslation($translation);
+
 					$translation->write();
 					echo "$stackPage->ID: translated.<br/>\n";
 				}
