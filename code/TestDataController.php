@@ -12,7 +12,7 @@ class TestDataController extends Controller {
 	function init() {
 		parent::init();
 
-		$canAccess = (Director::isDev() || Director::is_cli() || Permission::check("ADMIN"));
+		$canAccess = ((Director::isDev() || Director::is_cli()) && Permission::check("ADMIN"));
 		if(!$canAccess) return Security::permissionFailure($this);
 
 		$this->message("<h1>Test Data</h1>");

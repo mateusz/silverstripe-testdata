@@ -20,7 +20,7 @@ class EntireSiteTranslator extends Controller {
 		}
 
 		// Basic access check.
-		$canAccess = (Director::isDev() || Director::is_cli() || Permission::check("ADMIN"));
+		$canAccess = ((Director::isDev() || Director::is_cli()) && Permission::check("ADMIN"));
 		if(!$canAccess) return Security::permissionFailure($this);
 	}
 
