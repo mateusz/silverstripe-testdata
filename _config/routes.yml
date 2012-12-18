@@ -3,8 +3,8 @@ Name: testdata_routes
 ---
 Director:
   rules:
+    'dev/data/export/TestDataExporter//$Action/$ID/$OtherID': 'TestDataExporter'
     'dev/data/export//$Action/$ID/$OtherID': 'TestDataExporter'
-    'dev/data/TestDataExporter//$Action/$ID/$OtherID': 'TestDataExporter'
+    'dev/data/translate/EntireSiteTranslator//$Action/$ID/$OtherID': 'EntireSiteTranslator'
+    'dev/data/translate//$Action/$ID/$OtherID': 'EntireSiteTranslator'
     'dev/data//$Action/$ID/$OtherID':  'TestDataController'
-    'dev/translate/EntireSiteTranslator//$Action/$ID/$OtherID': 'EntireSiteTranslator'
-    'dev/translate//$Action/$ID/$OtherID': 'EntireSiteTranslator'

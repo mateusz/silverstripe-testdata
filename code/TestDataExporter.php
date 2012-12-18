@@ -72,7 +72,10 @@ class TestDataExporter extends Controller {
 		// Create actions for the form
 		$actions = new FieldList(new FormAction("export", "Export"));
 
-		return new Form($this, "ExportForm", $fields, $actions);
+		$form = new Form($this, "ExportForm", $fields, $actions);
+		$form->setFormAction(Director::baseURL().'dev/data/export/TestDataExporter/ExportForm');
+
+		return $form;
 	}
 
 	/**

@@ -36,7 +36,10 @@ class EntireSiteTranslator extends Controller {
 		// Create actions for the form
 		$actions = new FieldList(new FormAction("translate", "Translate"));
 
-		return new Form($this, "TranslationForm", $fields, $actions);
+		$form = new Form($this, "TranslationForm", $fields, $actions);
+		$form->setFormAction(Director::baseURL().'dev/data/translate/EntireSiteTranslator/TranslationForm');
+
+		return $form;
 	}
 
 	function fakeTranslation($object) {
