@@ -25,18 +25,22 @@ usage: dev/data/COMMAND[/PARAMETER]
 
 The available commands are:
 
-   load   Loads the data from yml files. The new records will be created, old removed and the
-          existing ones updated. Added db objects are tracked, so it is possible to remove all
-          of them later. The following COMMANDs are accepted:
+   load      Loads the data from yml files. The new records will be created, old removed and the
+             existing ones updated. Added db objects are tracked, so it is possible to remove all
+             of them later. The following COMMANDs are accepted:
             
-             all
-                Scans the <wwwroot>/<project>/testdata directory for all available files and loads
-                them into the database
+               all
+                  Scans the <wwwroot>/<project>/testdata directory for all available files and loads
+                  them into the database
 
-             name1,name2,...
-                Loads only the specified files - case insensitive, omit the .yml extension.
+               name1,name2,...
+                  Loads only the specified files - case insensitive, omit the .yml extension.
 
-   reset  Removes all tracked records - only records added via `load' are affected.
+   reset     Removes all tracked records - only records added via `load' are affected.
+
+   export    Accesses the exporter for the data currently in the database (reverse of load).
+
+   translate Accesses the site translator for testing multiple Translatable translations.
 </pre>
 ");
 	}
