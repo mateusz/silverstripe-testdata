@@ -159,6 +159,9 @@ class TestDataExporter extends Controller {
 		foreach ($object->toMap() as $field => $value) {
 			if (in_array($field, $noninterestingFields)) continue;
 
+			// We can only write basic types, we don't know how to serialise objects.
+			if (is_object($value)) continue;
+
 			if (strpos($value, "\n")) {
 				// Use YAML blocks to store newlines. The block needs to be at the next level of indentation.
 				$value = str_replace("\n", "\n\t\t\t", $value);
