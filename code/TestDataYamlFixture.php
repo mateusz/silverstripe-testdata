@@ -196,4 +196,21 @@ class TestDataYamlFixture extends YamlFixture {
 			}
 		}
 	}
+
+	/**
+	 * Copied from former YamlFixture.
+	 *
+	 * @TODO rewrite the whole module to use new API
+	 */
+	protected function parseFixtureVal($fieldVal) {
+		// Parse a dictionary reference - used to set foreign keys
+		if(substr($fieldVal,0,2) == '=>') {
+			list($a, $b) = explode('.', substr($fieldVal,2), 2);
+			return $this->fixtureDictionary[$a][$b];
+
+			// Regular field value setting
+		} else {
+			return $fieldVal;
+		}
+	}
 }
