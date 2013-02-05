@@ -40,6 +40,29 @@ class TestDataYamlFixture extends YamlFixture {
 	}
 
 	/**
+	 * Attempt to publish the object, if it supports this funcitonality.
+	 */
+	protected function attemptPublish($obj) {
+		if ($obj->hasExtension('Versioned')) {
+			if (method_exists($obj, 'doPublish')) {
+				// Detect legacy function signatures with parameters (e.g. as in EditableFormFields)
+				$reflection = new ReflectionMethod(get_class($obj), 'doPublish');
+
+				if ($reflection->getNumberOfRequiredParameters()==0) {
+					// New
+					$obj->doPublish();
+				} else {
+					// Legacy
+					$obj->doPublish('Stage', 'Live');
+				}
+			} else {
+				// Versioned default
+				$obj->publish('Stage', 'Live');
+			}
+		}
+	}
+
+	/**
 	 * Mostly rewritten from parent, with changes that allow us to update objects (not only write new).
 	 * Also adds dummy file creation. The files will either be empty (touched only), or will be copied
 	 * from the testdata directory if found.
@@ -62,7 +85,7 @@ class TestDataYamlFixture extends YamlFixture {
 
 			// Create the object
 			if (!isset($obj) || !$obj) {
-				if ($tag) { 
+				if ($tag) {
 					$tag->delete(); // Tag not valid, delete.
 					$tag = null;
 				}
@@ -121,24 +144,7 @@ class TestDataYamlFixture extends YamlFixture {
 			// has to happen before relations in case a class is referring to itself
 			$this->fixtureDictionary[$dataClass][$identifier] = $obj->ID;
 			
-			// Make sure the object is deployed to both stages.
-			if (Object::has_extension($obj->ClassName, 'Versioned')) {
-				if (method_exists($obj, 'doPublish')) {
-					// Detect legacy function signatures with parameters (e.g. as in EditableFormFields)
-					$reflection = new ReflectionMethod(get_class($obj), 'doPublish');
-
-					if ($reflection->getNumberOfRequiredParameters()==0) {
-						// New
-						$obj->doPublish();
-					} else {
-						// Legacy
-						$obj->doPublish('Stage', 'Live');
-					}
-				} else {
-					// Versioned default
-					$obj->publish('Stage', 'Live');
-				}
-			}
+			$this->attemptPublish($obj);
 
 			// Increment the version on the tag so we can find the old unused records afterwards.
 			if ($tag) {
@@ -188,10 +194,7 @@ class TestDataYamlFixture extends YamlFixture {
 
 					$obj->{$fieldName . 'ID'} = $this->parseFixtureVal($fieldVal);
 					$obj->write();
-					if (Object::has_extension($obj->ClassName, 'Versioned')) {
-						if (method_exists($obj, 'doPublish')) $obj->doPublish('Stage', 'Live');
-						else $obj->publish('Stage', 'Live');
-					}
+					$this->attemptPublish($obj);
 				}
 			}
 		}
