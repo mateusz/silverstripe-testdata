@@ -9,4 +9,8 @@ class TestDataTag extends DataObject {
 		'FixtureID' => 'Varchar',
 		'Version' => 'Int'
 	);
+
+	function getObject() {
+		return DataObject::get_by_id($this->Class, $this->RecordID, false);
+	}
 }

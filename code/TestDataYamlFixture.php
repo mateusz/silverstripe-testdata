@@ -63,6 +63,15 @@ class TestDataYamlFixture extends YamlFixture {
 	}
 
 	/**
+	 * Get the DataObject the tag is pointing to.
+	 *
+	 * @returns DataObject
+	 */
+	protected function getTag($testDataTag, $dataClass, $identifier) {
+		return DataObject::get_one('TestDataTag', "\"FixtureFile\"='$testDataTag' AND \"Class\"='$dataClass' AND \"FixtureID\"='$identifier'", false);
+	}
+
+	/**
 	 * Mostly rewritten from parent, with changes that allow us to update objects (not only write new).
 	 * Also adds dummy file creation. The files will either be empty (touched only), or will be copied
 	 * from the testdata directory if found.
@@ -74,13 +83,11 @@ class TestDataYamlFixture extends YamlFixture {
 		
 		$testDataTag = basename($this->fixtureFile);
 		foreach($items as $identifier => $fields) {
-			$obj = null;
+			$tag = $this->getTag($testDataTag, $dataClass, $identifier);
 
-			// Check if the object already exists in the database be looking for its tag.
-			$tag = DataObject::get_one('TestDataTag', "\"FixtureFile\"='$testDataTag' AND \"Class\"='$dataClass' AND \"FixtureID\"='$identifier'", false);
+			$obj = null;
 			if ($tag) {
-				// Object exists, increment the version.
-				$obj = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
+				$obj = $tag->getObject();
 			}
 
 			// Create the object
@@ -169,9 +176,20 @@ class TestDataYamlFixture extends YamlFixture {
 	 * Populate relations for items of the dataClass (code moved from writeDataObject).
 	 */
 	protected function writeRelations($dataClass, $items) {
+		$testDataTag = basename($this->fixtureFile);
+
 		foreach($items as $identifier => $fields) {
-			$obj = $this->objFromFixture($dataClass, $identifier);
-			if (!$obj) continue;
+			$tag = $this->getTag($testDataTag, $dataClass, $identifier);
+
+			$obj = null;
+			if ($tag) {
+				$obj = $tag->getObject();
+			}
+
+			if (!$obj) {
+				Controller::curr()->message("<br>(Could not find $dataClass::$identifier for relation updates, skipping)");
+				continue;
+			}
 			
 			// Populate all relations
 			if($fields) foreach($fields as $fieldName => $fieldVal) {

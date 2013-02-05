@@ -45,7 +45,7 @@ The available commands are:
 ");
 	}
 
-	private function message($message) {
+	public function message($message) {
 		if (!self::$quiet) {
 			if (Director::is_cli()) {
 				$message = strip_tags($message);
