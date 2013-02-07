@@ -213,11 +213,8 @@ class TestDataYamlFixture extends YamlFixture {
 					foreach($items as $item) {
 						$parsedItems[] = $this->parseFixtureVal($item);
 					}
-					if($obj->has_many($fieldName)) {
-						$obj->getComponents($fieldName)->setByIDList($parsedItems);
-					} elseif($obj->many_many($fieldName)) {
-						$obj->getManyManyComponents($fieldName)->setByIDList($parsedItems);
-					}
+
+					$obj->$fieldName()->setByIDList($parsedItems);
 				} elseif($obj->has_one($fieldName)) {
 					if ($fieldName=='Parent' && $obj->URLSegment) {
 						// If we are changing the parent, nullify the URLSegment so the system can get rid of suffixes.
