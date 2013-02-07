@@ -68,23 +68,13 @@ The available commands are:
 				continue;
 			}
 
-			if (Object::has_extension($tag->Class, 'Versioned')) {
-				// Needs to be removed from both stages
-				$oldMode = Versioned::get_reading_mode();
-				Versioned::reading_stage('Stage');
-				$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
-				if ($record) $record->delete();
-				Versioned::reading_stage('Live');
-				$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
-				if ($record) $record->delete();
-				Versioned::set_reading_mode($oldMode);
+			$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
+			if ($record) {
+				TestDataYamlFixture::attempt_unpublish($record);
+				$record->delete();
 			}
-			else {
-				$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
-				if ($record) $record->delete();
-			}
-			$this->message('.');
 			$tag->delete();
+			$this->message('.');
 		}
 		DB::query("DELETE FROM \"TestDataTag\"");
 		$this->message("\n<span style=\"background: green; color: white;\">SUCCESS</span>\n");
@@ -140,13 +130,8 @@ The available commands are:
 
 				$record = DataObject::get_by_id($tag->Class, $tag->RecordID, false);
 				if ($record) {
-					if (Object::has_extension($record->ClassName, 'Versioned')) {
-						$record->deleteFromStage('Live');
-						$record->deleteFromStage('Stage');
-					}
-					else {
-						$record->delete();
-					}
+					TestDataYamlFixture::attempt_unpublish($record);
+					$record->delete();
 				}
 				$tag->delete();
 				$this->message('.');

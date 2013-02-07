@@ -42,7 +42,7 @@ class TestDataYamlFixture extends YamlFixture {
 	/**
 	 * Attempt to publish the object, if it supports this funcitonality.
 	 */
-	protected function attemptPublish($obj) {
+	public static function attempt_publish($obj) {
 		if ($obj->hasExtension('Versioned')) {
 			if (method_exists($obj, 'doPublish')) {
 				// Detect legacy function signatures with parameters (e.g. as in EditableFormFields)
@@ -58,6 +58,20 @@ class TestDataYamlFixture extends YamlFixture {
 			} else {
 				// Versioned default
 				$obj->publish('Stage', 'Live');
+			}
+		}
+	}
+
+	/**
+	 * Attempt to unpublish the object, if it supports this funcitonality.
+	 */
+	public static function attempt_unpublish($obj) {
+		if ($obj->hasExtension('Versioned')) {
+			if (method_exists($obj, 'doUnpublish')) {
+				$obj->doUnpublish();
+			} else {
+				// Versioned default
+				$record->deleteFromStage('Live');
 			}
 		}
 	}
@@ -151,7 +165,7 @@ class TestDataYamlFixture extends YamlFixture {
 			// has to happen before relations in case a class is referring to itself
 			$this->fixtureDictionary[$dataClass][$identifier] = $obj->ID;
 			
-			$this->attemptPublish($obj);
+			TestDataYamlFixture::attempt_publish($obj);
 
 			// Increment the version on the tag so we can find the old unused records afterwards.
 			if ($tag) {
@@ -212,7 +226,7 @@ class TestDataYamlFixture extends YamlFixture {
 
 					$obj->{$fieldName . 'ID'} = $this->parseFixtureVal($fieldVal);
 					$obj->write();
-					$this->attemptPublish($obj);
+					TestDataYamlFixture::attempt_publish($obj);
 				}
 			}
 		}
